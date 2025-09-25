@@ -1,0 +1,27 @@
+{
+    "sampling_rate": 1000,
+    "eeg_scale_factor": 1e-06,
+    "ecg_scale_factor": 0.001,
+    "window_size": 10.0,
+    "eeg_channels": [
+        "EEG_C3",
+        "EEG_C4",
+        "EEG_O1",
+        "EEG_O2",
+        "EEG_F3",
+        "EEG_F4",
+        "EEG_P3",
+        "EEG_P4"
+    ],
+    "ecg_channels": [
+        "ECG_I",
+        "ECG_II",
+        "ECG_III"
+    ],
+    "colors": {
+        "eeg": "#1f77b4",
+        "ecg": "#d62728",
+        "background": "#ffffff",
+        "grid": "#f0f0f0"
+    }
+}
