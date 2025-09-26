@@ -162,97 +162,175 @@ class EEGViewer:
     def _setup_layout(self):
         """Setup the Dash application layout."""
         self.app.layout = html.Div([
-            html.H1("QUASAR EEG/ECG Signal Viewer",
-                   style={'textAlign': 'center', 'marginBottom': '30px'}),
+            # Header section with improved styling
+            html.Div([
+                html.H1("QUASAR EEG/ECG Signal Viewer",
+                       style={
+                           'textAlign': 'center',
+                           'marginBottom': '10px',
+                           'color': '#2c3e50',
+                           'fontFamily': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+                           'fontWeight': '300',
+                           'fontSize': '2.5em'
+                       }),
+                html.P("Professional Signal Visualization and Analysis Tool",
+                       style={
+                           'textAlign': 'center',
+                           'color': '#7f8c8d',
+                           'fontFamily': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+                           'fontSize': '1.1em',
+                           'marginBottom': '30px'
+                       })
+            ], style={'backgroundColor': '#f8f9fa', 'padding': '20px', 'marginBottom': '20px'}),
 
-            # Control panel
+            # Control panel with improved styling
             html.Div([
                 html.Div([
-                    html.Label("Data File:"),
+                    html.Label("Data File Upload:",
+                              style={'fontWeight': 'bold', 'color': '#34495e', 'marginBottom': '10px'}),
                     dcc.Upload(
                         id='upload-data',
-                        children=html.Div(['Drag and Drop or ', html.A('Select CSV File')]),
+                        children=html.Div([
+                            html.I(className='fas fa-upload', style={'marginRight': '8px'}),
+                            'Drag and Drop or ',
+                            html.A('Select CSV File', style={'color': '#3498db', 'textDecoration': 'underline'})
+                        ]),
                         style={
-                            'width': '100%', 'height': '60px', 'lineHeight': '60px',
-                            'borderWidth': '1px', 'borderStyle': 'dashed',
-                            'borderRadius': '5px', 'textAlign': 'center',
-                            'margin': '10px'
+                            'width': '100%', 'height': '70px', 'lineHeight': '70px',
+                            'borderWidth': '2px', 'borderStyle': 'dashed',
+                            'borderRadius': '8px', 'textAlign': 'center',
+                            'margin': '10px 0', 'borderColor': '#bdc3c7',
+                            'backgroundColor': '#ffffff',
+                            'transition': 'all 0.3s ease'
                         },
                         multiple=False
                     )
-                ], className='four columns'),
+                ], className='four columns', style={'padding': '0 15px'}),
 
                 html.Div([
-                    html.Label("Time Window (seconds):"),
+                    html.Label("Time Window (seconds):",
+                              style={'fontWeight': 'bold', 'color': '#34495e', 'marginBottom': '10px'}),
                     dcc.Slider(
                         id='time-window',
                         min=1, max=30, step=1, value=self.config['window_size'],
                         marks={i: str(i) for i in range(1, 31, 5)},
                         tooltip={"placement": "bottom", "always_visible": True}
                     )
-                ], className='four columns'),
+                ], className='four columns', style={'padding': '0 15px'}),
 
                 html.Div([
-                    html.Label("Start Time (seconds):"),
+                    html.Label("Start Time (seconds):",
+                              style={'fontWeight': 'bold', 'color': '#34495e', 'marginBottom': '10px'}),
                     dcc.Slider(
                         id='start-time',
                         min=0, max=100, step=0.1, value=0,
                         marks={}, tooltip={"placement": "bottom", "always_visible": True}
                     )
-                ], className='four columns'),
-            ], className='row', style={'margin': '20px'}),
+                ], className='four columns', style={'padding': '0 15px'}),
+            ], className='row', style={
+                'margin': '20px 0',
+                'backgroundColor': '#ffffff',
+                'padding': '20px',
+                'borderRadius': '8px',
+                'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
+            }),
 
-            # Channel selection
+            # Channel selection with improved styling
             html.Div([
                 html.Div([
-                    html.Label("EEG Channels (µV):"),
+                    html.Label("EEG Channels (µV):",
+                              style={'fontWeight': 'bold', 'color': '#2980b9', 'marginBottom': '15px', 'fontSize': '1.1em'}),
                     dcc.Checklist(
                         id='eeg-channels',
                         options=[],
                         value=[],
-                        style={'columnCount': 2}
+                        style={'columnCount': 2, 'fontSize': '0.95em'},
+                        inputStyle={'marginRight': '8px'},
+                        labelStyle={'display': 'block', 'marginBottom': '8px', 'color': '#34495e'}
                     )
-                ], className='four columns'),
+                ], className='four columns', style={'padding': '0 15px'}),
 
                 html.Div([
-                    html.Label("ECG Channels (mV):"),
+                    html.Label("ECG Channels (mV):",
+                              style={'fontWeight': 'bold', 'color': '#e74c3c', 'marginBottom': '15px', 'fontSize': '1.1em'}),
                     dcc.Checklist(
                         id='ecg-channels',
                         options=[],
                         value=[],
-                        style={'columnCount': 1}
+                        style={'columnCount': 1, 'fontSize': '0.95em'},
+                        inputStyle={'marginRight': '8px'},
+                        labelStyle={'display': 'block', 'marginBottom': '8px', 'color': '#34495e'}
                     )
-                ], className='four columns'),
+                ], className='four columns', style={'padding': '0 15px'}),
 
                 html.Div([
-                    html.Label("Reference (CM):"),
+                    html.Label("Reference (CM):",
+                              style={'fontWeight': 'bold', 'color': '#95a5a6', 'marginBottom': '15px', 'fontSize': '1.1em'}),
                     dcc.Checklist(
                         id='cm-channels',
                         options=[],
                         value=[],
-                        style={'columnCount': 1}
+                        style={'columnCount': 1, 'fontSize': '0.95em'},
+                        inputStyle={'marginRight': '8px'},
+                        labelStyle={'display': 'block', 'marginBottom': '8px', 'color': '#34495e'}
                     )
-                ], className='four columns'),
-            ], className='row', style={'margin': '20px'}),
+                ], className='four columns', style={'padding': '0 15px'}),
+            ], className='row', style={
+                'margin': '20px 0',
+                'backgroundColor': '#ffffff',
+                'padding': '25px',
+                'borderRadius': '8px',
+                'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
+            }),
 
-            # Export controls
+            # Export controls with improved styling
             html.Div([
-                html.Button('Export Current View', id='export-btn',
-                           className='button-primary', style={'margin': '10px'}),
-                html.Button('Export Full Data', id='export-full-btn',
-                           className='button', style={'margin': '10px'}),
-                html.Div(id='export-status', style={'margin': '10px'})
-            ], style={'textAlign': 'center', 'margin': '20px'}),
+                html.Button('📊 Export Current View', id='export-btn',
+                           style={
+                               'backgroundColor': '#3498db', 'color': 'white', 'border': 'none',
+                               'padding': '12px 24px', 'margin': '10px', 'borderRadius': '6px',
+                               'fontSize': '1em', 'fontWeight': 'bold', 'cursor': 'pointer',
+                               'transition': 'all 0.3s ease'
+                           }),
+                html.Button('💾 Export Full Data', id='export-full-btn',
+                           style={
+                               'backgroundColor': '#2ecc71', 'color': 'white', 'border': 'none',
+                               'padding': '12px 24px', 'margin': '10px', 'borderRadius': '6px',
+                               'fontSize': '1em', 'fontWeight': 'bold', 'cursor': 'pointer',
+                               'transition': 'all 0.3s ease'
+                           }),
+                html.Div(id='export-status', style={
+                    'margin': '15px', 'fontSize': '1em', 'fontWeight': 'bold',
+                    'color': '#27ae60', 'textAlign': 'center'
+                })
+            ], style={
+                'textAlign': 'center', 'margin': '20px 0',
+                'backgroundColor': '#ffffff', 'padding': '20px',
+                'borderRadius': '8px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
+            }),
 
-            # Main plot
-            dcc.Graph(id='signal-plot', style={'height': '600px'}),
+            # Main plot with improved styling
+            html.Div([
+                dcc.Graph(id='signal-plot', style={'height': '650px'})
+            ], style={
+                'margin': '20px 0', 'backgroundColor': '#ffffff',
+                'borderRadius': '8px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)',
+                'padding': '15px'
+            }),
 
             # Statistics panel
-            html.Div(id='statistics', style={'margin': '20px'}),
+            html.Div(id='statistics', style={
+                'margin': '20px 0', 'backgroundColor': '#ffffff',
+                'borderRadius': '8px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)',
+                'padding': '20px'
+            }),
 
             # Hidden div to store data
             html.Div(id='data-store', style={'display': 'none'})
-        ])
+        ], style={
+            'backgroundColor': '#ecf0f1', 'minHeight': '100vh',
+            'fontFamily': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
+        })
 
     def _setup_callbacks(self):
         """Setup Dash callbacks for interactivity."""
