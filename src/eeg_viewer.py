@@ -74,13 +74,51 @@ class EEGViewer:
 
         return default_config
 
+    def _validate_file_path(self, data_file):
+        """Validate file path and accessibility."""
+        if not data_file:
+            raise ValueError("No data file path provided")
+
+        if not os.path.exists(data_file):
+            raise FileNotFoundError(f"Data file not found: {data_file}")
+
+        if not os.access(data_file, os.R_OK):
+            raise PermissionError(f"Cannot read data file: {data_file}")
+
+        # Check file size (warn if > 100MB)
+        file_size = os.path.getsize(data_file) / (1024 * 1024)  # MB
+        if file_size > 100:
+            logger.warning(f"Large file detected: {file_size:.1f}MB. Loading may take time.")
+
+    def _validate_csv_structure(self, df):
+        """Validate CSV data structure and content."""
+        if df.empty:
+            raise ValueError("CSV file is empty")
+
+        if len(df.columns) < 2:
+            raise ValueError("CSV must have at least 2 columns (time + signal)")
+
+        # Check for numeric data in signal columns
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        if len(numeric_cols) < 1:
+            raise ValueError("No numeric columns found in CSV")
+
+        # Check for missing data
+        if df.isnull().sum().sum() > len(df) * 0.1:  # More than 10% missing
+            logger.warning("Significant missing data detected (>10% of values)")
+
+        logger.info(f"Validation passed: {len(df)} rows, {len(df.columns)} columns")
+
     def load_data(self, data_file):
         """Load EEG/ECG data from CSV file with QUASAR format support."""
         try:
             logger.info(f"Loading data from {data_file}")
 
+            # Validate file before processing
+            self._validate_file_path(data_file)
+
             # Read file handling # comment lines and extracting metadata
-            with open(data_file, 'r') as f:
+            with open(data_file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
 
             # Extract metadata from QUASAR header comments
@@ -90,15 +128,18 @@ class EEGViewer:
                     if 'Sample_Frequency_(Hz)' in line:
                         try:
                             freq_value = line.split('=')[1].split(',')[1].strip()
-                            metadata['sampling_rate'] = float(freq_value)
-                        except:
-                            pass
+                            freq_float = float(freq_value)
+                            if freq_float <= 0:
+                                raise ValueError("Invalid sampling rate")
+                            metadata['sampling_rate'] = freq_float
+                        except (IndexError, ValueError) as e:
+                            logger.warning(f"Could not parse sampling rate: {e}")
                     elif 'Sensor_Data_Units' in line:
                         try:
                             units = line.split('=')[1].split(',')[1].strip()
                             metadata['data_units'] = units
-                        except:
-                            pass
+                        except IndexError:
+                            logger.warning("Could not parse data units")
 
             # Update sampling rate if found in file
             if 'sampling_rate' in metadata:
@@ -108,10 +149,22 @@ class EEGViewer:
             # Filter out comment lines starting with #
             data_lines = [line for line in lines if not line.strip().startswith('#')]
 
+            if not data_lines:
+                raise ValueError("No data rows found after removing comments")
+
             # Write filtered data to temporary string for pandas
             import io
             data_string = ''.join(data_lines)
-            self.data = pd.read_csv(io.StringIO(data_string))
+
+            try:
+                self.data = pd.read_csv(io.StringIO(data_string))
+            except pd.errors.EmptyDataError:
+                raise ValueError("CSV file contains no data")
+            except pd.errors.ParserError as e:
+                raise ValueError(f"CSV parsing error: {e}")
+
+            # Validate the loaded data
+            self._validate_csv_structure(self.data)
 
             # Detect channels automatically - exclude non-signal columns
             ignore_columns = ['Time', 'time', 'timestamp', 'Trigger', 'Time_Offset', 'ADC_Status',
@@ -440,19 +493,48 @@ class EEGViewer:
              Input('start-time', 'value')]
         )
         def update_plot(data_json, selected_eeg, selected_ecg, selected_cm, time_window, start_time):
-            if data_json is None:
-                return {}, "No data loaded"
+            try:
+                if data_json is None:
+                    return {}, "⚠️ No data loaded. Please upload a CSV file."
 
-            # Load data from JSON
-            df = pd.read_json(data_json, orient='split')
+                # Validate inputs
+                if not isinstance(time_window, (int, float)) or time_window <= 0:
+                    return {}, "⚠️ Invalid time window value"
 
-            # Filter data by time window
-            end_time = start_time + time_window
-            mask = (df['Time'] >= start_time) & (df['Time'] <= end_time)
-            df_window = df[mask]
+                if not isinstance(start_time, (int, float)) or start_time < 0:
+                    return {}, "⚠️ Invalid start time value"
 
-            if df_window.empty:
-                return {}, "No data in selected time window"
+                # Load data from JSON
+                try:
+                    df = pd.read_json(data_json, orient='split')
+                except ValueError as e:
+                    return {}, f"⚠️ Error loading data: {str(e)}"
+
+                if df.empty:
+                    return {}, "⚠️ Dataset is empty"
+
+                # Check if Time column exists
+                if 'Time' not in df.columns:
+                    return {}, "⚠️ No time column found in data"
+
+                # Filter data by time window
+                end_time = start_time + time_window
+
+                # Validate time bounds
+                max_time = df['Time'].max()
+                if start_time >= max_time:
+                    return {}, f"⚠️ Start time ({start_time:.1f}s) exceeds data duration ({max_time:.1f}s)"
+
+                mask = (df['Time'] >= start_time) & (df['Time'] <= end_time)
+                df_window = df[mask]
+
+                if df_window.empty:
+                    return {}, f"⚠️ No data in time window {start_time:.1f}s - {end_time:.1f}s"
+
+                # Check if any channels are selected
+                all_selected = (selected_eeg or []) + (selected_ecg or []) + (selected_cm or [])
+                if not all_selected:
+                    return {}, "ℹ️ Please select at least one channel to display"
 
             # Create subplots with multiple y-axes for different scales
             fig = make_subplots(
@@ -583,7 +665,24 @@ class EEGViewer:
             else:
                 stats_component = "No statistics available"
 
-            return fig, stats_component
+                return fig, stats_component
+
+            except Exception as e:
+                logger.error(f"Error in update_plot: {str(e)}")
+                empty_fig = go.Figure()
+                empty_fig.update_layout(
+                    title="Error in Plot Generation",
+                    xaxis_title="Time (s)",
+                    yaxis_title="Amplitude",
+                    annotations=[{
+                        'text': f"⚠️ Plot generation failed: {str(e)}",
+                        'x': 0.5, 'y': 0.5,
+                        'xref': 'paper', 'yref': 'paper',
+                        'showarrow': False,
+                        'font': {'size': 16, 'color': 'red'}
+                    }]
+                )
+                return empty_fig, f"⚠️ Error: {str(e)}"
 
         @self.app.callback(
             Output('export-status', 'children'),
