@@ -547,53 +547,89 @@ class EEGViewer:
             # ECG channels (X1:LEOG, X2:REOG): thousands of µV (~mV range)
             # CM: large amplitude reference signal
 
+            # Performance optimization: Limit data points for large datasets
+            max_points = 10000  # Maximum points to plot for performance
+            data_len = len(df_window)
+
+            if data_len > max_points:
+                # Downsample data while preserving signal characteristics
+                step = max(1, data_len // max_points)
+                df_plot = df_window.iloc[::step].copy()
+                logger.info(f"Downsampled from {data_len} to {len(df_plot)} points for performance")
+            else:
+                df_plot = df_window
+
             # Add EEG traces (µV scale) - QUASAR data is already in µV
             for i, channel in enumerate(selected_eeg or []):
-                if channel in df_window.columns:
+                if channel in df_plot.columns:
                     # QUASAR data is already in µV, no conversion needed
-                    y_data = df_window[channel]
+                    y_data = df_plot[channel]
+
+                    # Skip channels with all NaN values
+                    if y_data.isna().all():
+                        logger.warning(f"Channel {channel} has no valid data")
+                        continue
+
                     fig.add_trace(
                         go.Scatter(
-                            x=df_window['Time'],
+                            x=df_plot['Time'],
                             y=y_data,
                             mode='lines',
                             name=f'{channel} (µV)',
-                            line=dict(color=px.colors.qualitative.Set1[i % 10]),
-                            yaxis='y'
+                            line=dict(color=px.colors.qualitative.Set1[i % 10], width=1.5),
+                            yaxis='y',
+                            connectgaps=False,  # Don't connect gaps in data
+                            hovertemplate=f'<b>{channel}</b><br>Time: %{{x:.3f}}s<br>Amplitude: %{{y:.2f}}µV<extra></extra>'
                         )
                     )
 
             # Add ECG traces (mV scale) - QUASAR data is in µV, convert to mV for display
             for i, channel in enumerate(selected_ecg or []):
-                if channel in df_window.columns:
+                if channel in df_plot.columns:
                     # Convert µV to mV for ECG display (QUASAR ECG channels are high amplitude)
-                    y_data = df_window[channel] / 1000  # Convert µV to mV
+                    y_data = df_plot[channel] / 1000  # Convert µV to mV
+
+                    # Skip channels with all NaN values
+                    if y_data.isna().all():
+                        logger.warning(f"Channel {channel} has no valid data")
+                        continue
+
                     fig.add_trace(
                         go.Scatter(
-                            x=df_window['Time'],
+                            x=df_plot['Time'],
                             y=y_data,
                             mode='lines',
                             name=f'{channel} (mV)',
-                            line=dict(color=px.colors.qualitative.Set2[i % 8], dash='dash'),
-                            yaxis='y2'
+                            line=dict(color=px.colors.qualitative.Set2[i % 8], dash='dash', width=1.5),
+                            yaxis='y2',
+                            connectgaps=False,
+                            hovertemplate=f'<b>{channel}</b><br>Time: %{{x:.3f}}s<br>Amplitude: %{{y:.3f}}mV<extra></extra>'
                         ),
                         secondary_y=True
                     )
 
             # Add CM traces (reference signal) - plot on secondary axis due to large amplitude
             for i, channel in enumerate(selected_cm or []):
-                if channel in df_window.columns:
+                if channel in df_plot.columns:
                     # CM is reference signal with large amplitude, convert µV to mV for display
-                    y_data = df_window[channel] / 1000  # Convert µV to mV for consistency
+                    y_data = df_plot[channel] / 1000  # Convert µV to mV for consistency
+
+                    # Skip channels with all NaN values
+                    if y_data.isna().all():
+                        logger.warning(f"Channel {channel} has no valid data")
+                        continue
+
                     fig.add_trace(
                         go.Scatter(
-                            x=df_window['Time'],
+                            x=df_plot['Time'],
                             y=y_data,
                             mode='lines',
                             name=f'{channel} (Reference)',
                             line=dict(color='gray', width=1, dash='dot'),
                             yaxis='y2',
-                            opacity=0.7
+                            opacity=0.7,
+                            connectgaps=False,
+                            hovertemplate=f'<b>{channel}</b><br>Time: %{{x:.3f}}s<br>Amplitude: %{{y:.3f}}mV<extra></extra>'
                         ),
                         secondary_y=True
                     )
@@ -613,7 +649,24 @@ class EEGViewer:
                 showlegend=True,
                 plot_bgcolor='white',
                 height=650,
-                margin=dict(l=60, r=60, t=80, b=60)
+                margin=dict(l=60, r=60, t=80, b=60),
+                # Performance optimizations
+                uirevision='constant',  # Preserve zoom/pan state
+                autosize=True,
+                dragmode='pan',  # Default to pan mode
+                # Reduce render overhead
+                showTips=False,
+                # Optimize legend
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1,
+                    bgcolor="rgba(255,255,255,0.8)",
+                    bordercolor="rgba(0,0,0,0.2)",
+                    borderwidth=1
+                )
             )
 
             # Set y-axes titles and ranges
