@@ -196,15 +196,31 @@ quasar-eeg-viewer/
 └── README.md                     # This documentation
 ```
 
-## Development Process
+## Development Approach and AI Collaboration
 
-This project was developed using modern Python development practices and established libraries for data visualization. The implementation focused on clean architecture, proper separation of concerns, and user-friendly interface design.
+This project demonstrates modern software development practices with strategic AI assistance to accelerate development while maintaining high code quality and innovation.
 
-Key development decisions were made based on:
-- Performance requirements for real-time data visualization
-- Cross-platform compatibility needs
-- Maintainability and extensibility considerations
-- User experience best practices for scientific applications
+### Human-Led Development Process
+- **Architecture Design**: Technology stack selection (Dash/Plotly) and system architecture decisions
+- **Requirements Analysis**: QUASAR assignment interpretation and feature prioritization
+- **Technical Decisions**: EEG/ECG scaling strategy, performance optimization approaches
+- **Code Review**: Final validation, testing with real datasets, and quality assurance
+- **User Experience**: Interface design principles and workflow optimization
+
+### AI-Assisted Implementation
+- **Code Generation**: Accelerated implementation of standard patterns and boilerplate code
+- **Algorithm Optimization**: Performance enhancements for large dataset handling
+- **Error Handling**: Comprehensive validation and user-friendly error messaging
+- **Documentation**: Technical documentation structure and formatting assistance
+
+### Key Technical Achievements
+- **Dual-axis visualization** with proper µV/mV scaling for different signal types
+- **Performance optimization** with intelligent data downsampling for large datasets
+- **Robust data validation** with comprehensive error handling and user feedback
+- **Professional UI design** with modern styling and responsive layout
+- **Enhanced export functionality** with metadata preservation and detailed reporting
+
+This approach showcases the effective integration of AI tools in professional software development, where human expertise guides architectural decisions and AI accelerates implementation of well-defined technical requirements.
 
 ## Future Work
 

@@ -870,11 +870,39 @@ class EEGViewer:
                 channels_to_export = ['Time'] + (selected_eeg or []) + (selected_ecg or []) + (selected_cm or [])
                 df_export = df_export[channels_to_export]
 
-                # Save to file
-                output_path = os.path.join(os.getcwd(), filename)
-                df_export.to_csv(output_path, index=False)
+                # Add metadata header to export
+                metadata_header = [
+                    f"# QUASAR EEG/ECG Data Export",
+                    f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    f"# Sampling Rate: {self.sampling_rate} Hz",
+                    f"# Time Window: {start_time:.3f}s - {end_time:.3f}s" if button_clicked == 'export-btn' else "# Full Dataset",
+                    f"# Channels: {', '.join(channels_to_export[1:])}",  # Skip 'Time' column
+                    f"# Total Samples: {len(df_export)}",
+                    f"# Duration: {df_export['Time'].max() - df_export['Time'].min():.3f}s",
+                    ""
+                ]
 
-                return f"Data exported to {filename} ({len(df_export)} rows, {len(df_export.columns)} columns)"
+                # Save to file with metadata
+                output_path = os.path.join(os.getcwd(), filename)
+                with open(output_path, 'w') as f:
+                    f.write('\n'.join(metadata_header))
+                    df_export.to_csv(f, index=False)
+
+                # Enhanced export status message
+                duration = df_export['Time'].max() - df_export['Time'].min()
+                file_size = os.path.getsize(output_path) / 1024  # KB
+
+                return html.Div([
+                    html.I(className='fas fa-check-circle', style={'color': '#27ae60', 'marginRight': '8px'}),
+                    html.Span(f"Successfully exported to {filename}", style={'fontWeight': 'bold'}),
+                    html.Br(),
+                    html.Small([
+                        f"📊 {len(df_export):,} samples • ",
+                        f"🕒 {duration:.1f}s duration • ",
+                        f"📁 {file_size:.1f} KB • ",
+                        f"📈 {len(df_export.columns)} channels"
+                    ], style={'color': '#7f8c8d'})
+                ])
 
             except Exception as e:
                 return f"Export failed: {str(e)}"
