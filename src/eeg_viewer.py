@@ -701,22 +701,116 @@ class EEGViewer:
 
             if stats_data:
                 stats_df = pd.DataFrame(stats_data)
+
+                # Create enhanced statistics table with better formatting
+                header_style = {
+                    'backgroundColor': '#34495e',
+                    'color': 'white',
+                    'fontWeight': 'bold',
+                    'padding': '12px',
+                    'textAlign': 'center',
+                    'fontSize': '0.9em'
+                }
+
+                cell_style = {
+                    'padding': '10px',
+                    'textAlign': 'center',
+                    'borderBottom': '1px solid #ecf0f1',
+                    'fontSize': '0.85em'
+                }
+
+                # Color-code cells based on channel type
+                def get_row_style(channel):
+                    if channel in (selected_eeg or []):
+                        return {'backgroundColor': '#e8f4fd'}  # Light blue for EEG
+                    elif channel in (selected_ecg or []):
+                        return {'backgroundColor': '#fdf2f2'}  # Light red for ECG
+                    else:
+                        return {'backgroundColor': '#f8f9fa'}  # Light gray for reference
+
                 stats_table = html.Table([
                     html.Thead([
-                        html.Tr([html.Th(col) for col in stats_df.columns])
+                        html.Tr([
+                            html.Th(col, style=header_style) for col in stats_df.columns
+                        ])
                     ]),
                     html.Tbody([
-                        html.Tr([html.Td(stats_df.iloc[i][col]) for col in stats_df.columns])
-                        for i in range(len(stats_df))
+                        html.Tr([
+                            html.Td(
+                                stats_df.iloc[i][col],
+                                style={**cell_style, **get_row_style(stats_df.iloc[i]['Channel'])}
+                            ) for col in stats_df.columns
+                        ]) for i in range(len(stats_df))
                     ])
-                ], style={'margin': 'auto', 'width': '90%'})
+                ], style={
+                    'margin': '20px auto',
+                    'width': '95%',
+                    'borderCollapse': 'collapse',
+                    'borderRadius': '8px',
+                    'overflow': 'hidden',
+                    'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
+                })
+
+                # Add summary statistics
+                total_samples = sum(int(row['Samples']) for row in stats_data)
+                duration = end_time - start_time
+
+                summary_cards = html.Div([
+                    html.Div([
+                        html.H4("📊", style={'margin': '0', 'fontSize': '1.5em'}),
+                        html.P(f"{len(stats_data)}", style={'margin': '5px 0', 'fontSize': '1.2em', 'fontWeight': 'bold'}),
+                        html.P("Active Channels", style={'margin': '0', 'fontSize': '0.8em', 'color': '#7f8c8d'})
+                    ], style={
+                        'backgroundColor': '#3498db', 'color': 'white', 'padding': '15px',
+                        'borderRadius': '8px', 'textAlign': 'center', 'margin': '10px'
+                    }),
+                    html.Div([
+                        html.H4("⏱️", style={'margin': '0', 'fontSize': '1.5em'}),
+                        html.P(f"{duration:.1f}s", style={'margin': '5px 0', 'fontSize': '1.2em', 'fontWeight': 'bold'}),
+                        html.P("Time Window", style={'margin': '0', 'fontSize': '0.8em', 'color': '#7f8c8d'})
+                    ], style={
+                        'backgroundColor': '#2ecc71', 'color': 'white', 'padding': '15px',
+                        'borderRadius': '8px', 'textAlign': 'center', 'margin': '10px'
+                    }),
+                    html.Div([
+                        html.H4("📈", style={'margin': '0', 'fontSize': '1.5em'}),
+                        html.P(f"{total_samples:,}", style={'margin': '5px 0', 'fontSize': '1.2em', 'fontWeight': 'bold'}),
+                        html.P("Data Points", style={'margin': '0', 'fontSize': '0.8em', 'color': '#7f8c8d'})
+                    ], style={
+                        'backgroundColor': '#e74c3c', 'color': 'white', 'padding': '15px',
+                        'borderRadius': '8px', 'textAlign': 'center', 'margin': '10px'
+                    }),
+                    html.Div([
+                        html.H4("📡", style={'margin': '0', 'fontSize': '1.5em'}),
+                        html.P(f"{self.sampling_rate:.0f} Hz", style={'margin': '5px 0', 'fontSize': '1.2em', 'fontWeight': 'bold'}),
+                        html.P("Sampling Rate", style={'margin': '0', 'fontSize': '0.8em', 'color': '#7f8c8d'})
+                    ], style={
+                        'backgroundColor': '#9b59b6', 'color': 'white', 'padding': '15px',
+                        'borderRadius': '8px', 'textAlign': 'center', 'margin': '10px'
+                    })
+                ], style={'display': 'flex', 'justifyContent': 'space-around', 'flexWrap': 'wrap'})
 
                 stats_component = html.Div([
-                    html.H3("Signal Statistics"),
+                    html.H3("📊 Signal Statistics", style={
+                        'textAlign': 'center', 'color': '#2c3e50', 'marginBottom': '20px',
+                        'fontFamily': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
+                    }),
+                    summary_cards,
+                    html.Hr(style={'margin': '30px 0', 'border': 'none', 'borderTop': '1px solid #ecf0f1'}),
+                    html.H4("Detailed Channel Statistics", style={
+                        'textAlign': 'center', 'color': '#34495e', 'marginBottom': '15px'
+                    }),
                     stats_table
                 ])
             else:
-                stats_component = "No statistics available"
+                stats_component = html.Div([
+                    html.H3("📊 Signal Statistics", style={'textAlign': 'center', 'color': '#2c3e50'}),
+                    html.Div([
+                        html.I(className='fas fa-info-circle', style={'fontSize': '2em', 'color': '#95a5a6'}),
+                        html.P("No statistics available. Please select channels to display statistics.",
+                               style={'color': '#7f8c8d', 'textAlign': 'center', 'marginTop': '15px'})
+                    ], style={'textAlign': 'center', 'padding': '40px'})
+                ])
 
                 return fig, stats_component
 
