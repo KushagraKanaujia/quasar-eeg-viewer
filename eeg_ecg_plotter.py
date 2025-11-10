@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """
-QUASAR EEG/ECG Multichannel Plotter
-Interactive visualization of EEG and ECG signals with dual-axis scaling
+EEG/ECG Multichannel Viewer
+
+An interactive visualization tool for multi-channel EEG and ECG signal analysis.
+Provides dual-axis scaling, pan/zoom capabilities, and export functionality.
+
+Author: Kushagra Kanaujia
+Repository: https://github.com/KushagraKanaujia/quasar-eeg-viewer
+License: MIT
 """
 
 import pandas as pd
@@ -12,9 +18,12 @@ import argparse
 import os
 
 
-def load_quasar_data(filepath):
+def load_eeg_data(filepath):
     """
-    Load QUASAR CSV data, skipping comment lines starting with #
+    Load EEG/ECG CSV data, skipping comment lines starting with #
+
+    Args:
+        filepath (str): Path to the CSV file containing signal data
 
     Returns:
         pandas.DataFrame: Loaded data with proper channel classification
@@ -41,12 +50,15 @@ def load_quasar_data(filepath):
 
 def classify_channels(df):
     """
-    Classify channels according to QUASAR specification
+    Classify channels into EEG, ECG, and reference groups
+
+    Args:
+        df (pandas.DataFrame): DataFrame containing signal data
 
     Returns:
-        dict: Channel classifications
+        dict: Channel classifications with keys 'eeg', 'ecg', 'reference', 'ignored'
     """
-    # Ignore columns as per QUASAR spec
+    # Ignore non-signal columns
     ignore_columns = ['Time', 'Trigger', 'Time_Offset', 'ADC_Status',
                      'ADC_Sequence', 'Event', 'Comments', 'X3:']
 
@@ -91,7 +103,7 @@ def create_interactive_plot(df, channels, output_file='eeg_ecg_plot.html'):
     fig = make_subplots(
         rows=1, cols=1,
         specs=[[{"secondary_y": True}]],
-        subplot_titles=("QUASAR EEG/ECG Multichannel Plot",)
+        subplot_titles=("EEG/ECG Multichannel Visualization",)
     )
 
     # Color palettes
@@ -120,7 +132,7 @@ def create_interactive_plot(df, channels, output_file='eeg_ecg_plot.html'):
     # Add ECG traces (mV scale - secondary y-axis)
     for i, channel in enumerate(channels['ecg']):
         if channel in df.columns:
-            # Convert µV to mV for ECG display (QUASAR ECG channels are high amplitude)
+            # Convert µV to mV for ECG display (ECG channels typically have higher amplitude)
             ecg_data_mv = df[channel] / 1000  # Convert µV to mV
             fig.add_trace(
                 go.Scatter(
@@ -158,7 +170,7 @@ def create_interactive_plot(df, channels, output_file='eeg_ecg_plot.html'):
     # Update layout for optimal scrolling/zooming
     fig.update_layout(
         title={
-            'text': f'QUASAR EEG/ECG Data Visualization<br><sub>Duration: {df["Time"].max():.1f}s | Sampling Rate: 300 Hz | {len(df)} samples</sub>',
+            'text': f'EEG/ECG Signal Visualization<br><sub>Duration: {df["Time"].max():.1f}s | Sampling Rate: 300 Hz | {len(df)} samples</sub>',
             'x': 0.5,
             'xanchor': 'center'
         },
@@ -228,13 +240,13 @@ def create_interactive_plot(df, channels, output_file='eeg_ecg_plot.html'):
 def main():
     """Main execution function"""
     parser = argparse.ArgumentParser(
-        description='QUASAR EEG/ECG Interactive Plotter',
+        description='EEG/ECG Multichannel Viewer - Interactive visualization tool for electrophysiological signals',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   python eeg_ecg_plotter.py                                    # Use default data file
-  python eeg_ecg_plotter.py --data "EEG and ECG data_02_raw.csv"
-  python eeg_ecg_plotter.py --output my_plot.html
+  python eeg_ecg_plotter.py --data "path/to/data.csv"
+  python eeg_ecg_plotter.py --data data.csv --output analysis.html
         """
     )
 
@@ -254,12 +266,12 @@ Examples:
     # Validate input file
     if not os.path.exists(args.data):
         print(f"Error: Data file '{args.data}' not found")
-        print("Please ensure the QUASAR CSV file is in the current directory")
+        print("Please ensure the CSV file exists and the path is correct")
         return 1
 
     try:
         # Load and process data
-        df = load_quasar_data(args.data)
+        df = load_eeg_data(args.data)
         channels = classify_channels(df)
 
         # Create interactive plot
@@ -268,18 +280,18 @@ Examples:
         print("\n" + "="*60)
         print("SUCCESS: Interactive EEG/ECG plot generated!")
         print("="*60)
-        print(f"📊 Total channels plotted: {len(channels['eeg']) + len(channels['ecg']) + len(channels['reference'])}")
-        print(f"🧠 EEG channels (µV): {len(channels['eeg'])}")
-        print(f"💓 ECG channels (mV): {len(channels['ecg'])}")
-        print(f"📡 Reference channels: {len(channels['reference'])}")
-        print(f"⏱️  Duration: {df['Time'].max():.1f} seconds")
-        print(f"📈 Sampling rate: 300 Hz")
-        print(f"📁 Output file: {args.output}")
+        print(f"Total channels plotted: {len(channels['eeg']) + len(channels['ecg']) + len(channels['reference'])}")
+        print(f"EEG channels (µV): {len(channels['eeg'])}")
+        print(f"ECG channels (mV): {len(channels['ecg'])}")
+        print(f"Reference channels: {len(channels['reference'])}")
+        print(f"Duration: {df['Time'].max():.1f} seconds")
+        print(f"Sampling rate: 300 Hz")
+        print(f"Output file: {args.output}")
         print("\nFeatures:")
-        print("• Scroll/pan/zoom with mouse or range slider")
-        print("• Toggle channels on/off via legend")
-        print("• Dual y-axis scaling (EEG in µV, ECG in mV)")
-        print("• Export plot as PNG via toolbar")
+        print("- Scroll/pan/zoom with mouse or range slider")
+        print("- Toggle channels on/off via legend")
+        print("- Dual y-axis scaling (EEG in µV, ECG in mV)")
+        print("- Export plot as PNG via toolbar")
 
         return 0
 

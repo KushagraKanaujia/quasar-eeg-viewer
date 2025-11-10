@@ -50,6 +50,11 @@ logs/
 *.tmp
 *.temp
 
+# Generated output files
+eeg_ecg_plot.html
+*.html
+!examples/*.html
+
 # Export files (user generated)
 eeg_export_*.csv
 
