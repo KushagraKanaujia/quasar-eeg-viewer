@@ -1,10 +1,13 @@
-# EEG/ECG Multichannel Viewer
+# Quasar EEG Viewer
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![CI/CD](https://github.com/KushagraKanaujia/quasar-eeg-viewer/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/KushagraKanaujia/quasar-eeg-viewer/actions)
 
-An interactive web-based visualization tool for multi-channel EEG (Electroencephalography) and ECG (Electrocardiography) signal analysis. Built with Python, Plotly, and modern data science libraries to provide researchers and clinicians with powerful signal exploration capabilities.
+A professional, scalable visualization tool for multi-channel EEG (Electroencephalography) and ECG (Electrocardiography) signal analysis. Built with Python, Plotly, and modern software engineering practices to provide researchers and clinicians with powerful, reliable signal exploration capabilities.
+
+**Version 2.0** features a complete architectural redesign with modular components, comprehensive testing, and production-ready scalability.
 
 ## Features
 
@@ -34,30 +37,85 @@ An interactive web-based visualization tool for multi-channel EEG (Electroenceph
 - pip package manager
 
 ### Quick Install
+
+Install from the repository:
+
 ```bash
 git clone https://github.com/KushagraKanaujia/quasar-eeg-viewer.git
 cd quasar-eeg-viewer
-pip install -r requirements.txt
+pip install -e .
+```
+
+For development (with testing and linting tools):
+
+```bash
+pip install -e ".[dev]"
+```
+
+### Using pip (once published to PyPI)
+
+```bash
+pip install quasar-eeg-viewer
 ```
 
 ## Usage
 
-### Basic Usage
+### Command-Line Interface
+
+After installation, use the `quasar-eeg-viewer` command:
+
 ```bash
-python eeg_ecg_plotter.py
+# Basic usage with default data file
+quasar-eeg-viewer
+
+# Specify custom data file
+quasar-eeg-viewer --data path/to/your/data.csv --output analysis.html
+
+# View file information without plotting
+quasar-eeg-viewer --data data.csv --info
+
+# Create subplot view
+quasar-eeg-viewer --data data.csv --subplot
+
+# Adjust logging level
+quasar-eeg-viewer --data data.csv --log-level DEBUG
 ```
 
-This generates an interactive HTML file (`eeg_ecg_plot.html`) that can be opened in any modern web browser.
+### Python API
 
-### Custom Data File
+Use the package programmatically in your Python code:
+
+```python
+from quasar_eeg import quick_plot
+
+# Quick plotting
+fig = quick_plot('data.csv', 'output.html')
+```
+
+For more control:
+
+```python
+from quasar_eeg import EEGDataLoader, ChannelClassifier, EEGPlotter
+
+# Load data
+loader = EEGDataLoader()
+df = loader.load_from_file('data.csv')
+
+# Classify channels
+classifier = ChannelClassifier()
+channels = classifier.classify(df)
+
+# Create visualization
+plotter = EEGPlotter()
+fig = plotter.create_plot(df, channels, 'output.html')
+```
+
+### Legacy Script (Backward Compatibility)
+
+The original script is still available for backward compatibility:
+
 ```bash
-python eeg_ecg_plotter.py --data path/to/your/data.csv --output custom_plot.html
-```
-
-### Command-Line Options
-```
---data, -d    Path to CSV data file (default: EEG and ECG data_02_raw.csv)
---output, -o  Output HTML filename (default: eeg_ecg_plot.html)
+python eeg_ecg_plotter.py --data data.csv --output output.html
 ```
 
 ## Data Format
@@ -85,10 +143,14 @@ Time,Fz,Cz,P3,C3,F3,F4,C4,P4,X1:LEOG,X2:REOG,CM
 | **NumPy** | Numerical computations and array operations | 1.21.0+ |
 
 ### Architecture Highlights
-- **Single-script deployment**: Portable and easy to integrate
+- **Modular package structure**: Clean separation of concerns across modules
 - **Standalone HTML output**: No server required for visualization
-- **Modular design**: Clear separation of data loading, classification, and plotting
+- **Comprehensive error handling**: Robust DataLoadError and PlotterError exceptions
+- **Configurable logging**: Built-in logging system for debugging and monitoring
 - **Memory efficient**: Streaming data processing for large files
+- **Fully tested**: Comprehensive unit test coverage with pytest
+- **Type-safe configuration**: Dataclass-based configuration management
+- **CI/CD pipeline**: Automated testing across multiple Python versions and platforms
 
 ### Channel Classification Logic
 The tool automatically categorizes channels into three groups:
@@ -127,13 +189,38 @@ The tool automatically categorizes channels into three groups:
 
 ```
 quasar-eeg-viewer/
-├── eeg_ecg_plotter.py          # Main application script
-├── requirements.txt             # Python dependencies
-├── README.md                    # Project documentation
-├── LICENSE                      # MIT License
-├── .gitignore                  # Git ignore rules
-├── EEG and ECG data_02_raw.csv # Sample dataset
-└── eeg_ecg_plot.html           # Generated output (example)
+├── src/quasar_eeg/              # Main package source
+│   ├── __init__.py              # Package initialization and exports
+│   ├── cli.py                   # Command-line interface
+│   ├── core/                    # Core functionality
+│   │   ├── __init__.py
+│   │   ├── config.py            # Configuration management
+│   │   ├── data_loader.py       # Data loading and validation
+│   │   └── channel_classifier.py # Channel classification logic
+│   ├── visualization/           # Plotting components
+│   │   ├── __init__.py
+│   │   └── plotter.py           # Interactive plot generation
+│   └── utils/                   # Utility modules
+│       ├── __init__.py
+│       └── logger.py            # Logging utilities
+├── tests/                       # Comprehensive test suite
+│   ├── __init__.py
+│   ├── conftest.py              # Pytest configuration & fixtures
+│   ├── test_data_loader.py
+│   ├── test_channel_classifier.py
+│   └── test_plotter.py
+├── docs/                        # Documentation
+├── examples/                    # Usage examples
+├── .github/workflows/           # CI/CD pipelines
+│   └── ci.yml                   # GitHub Actions workflow
+├── eeg_ecg_plotter.py          # Legacy script (backward compatibility)
+├── pyproject.toml              # Modern Python packaging
+├── setup.py                    # Setup configuration
+├── requirements.txt            # Dependencies
+├── CHANGELOG.md                # Version history
+├── CONTRIBUTING.md             # Contribution guidelines
+├── LICENSE                     # MIT License
+└── README.md                   # This file
 ```
 
 ## Future Enhancements

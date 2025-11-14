@@ -1,9 +1,44 @@
 # Changelog
 
-All notable changes to the EEG/ECG Multichannel Viewer will be documented in this file.
+All notable changes to Quasar EEG Viewer will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0] - 2025-11-13
+
+### Major Refactoring
+
+Complete rewrite to make the codebase more maintainable and extensible.
+
+### Added
+- Modular package structure under `src/quasar_eeg/`
+- Configuration management with dataclasses
+- Custom exceptions for better error handling
+- Comprehensive test suite with pytest (30+ tests)
+- Modern packaging with `pyproject.toml`
+- CI/CD pipeline for automated testing
+- New CLI options: `--info`, `--subplot`, `--log-level`, `--config`
+- Python API with `quick_plot()` convenience function
+- Type hints throughout the codebase
+- Centralized logging system
+
+### Changed
+- Reorganized code into logical modules (core, visualization, utils)
+- Improved documentation with more examples
+- Better error messages and validation
+- Installation now supports `pip install -e .`
+- Original script kept as `eeg_ecg_plotter.py` for backward compatibility
+
+### Improved
+- Much easier to extend with new features
+- All components can be tested independently
+- Better separation of concerns
+- Cleaner API for programmatic use
+
+### Fixed
+- Various edge cases in CSV parsing
+- Better handling of large files
 
 ## [1.0.0] - 2024-09-26
 
