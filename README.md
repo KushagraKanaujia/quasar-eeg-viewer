@@ -3,11 +3,10 @@
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![CI/CD](https://github.com/KushagraKanaujia/quasar-eeg-viewer/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/KushagraKanaujia/quasar-eeg-viewer/actions)
 
-A professional, scalable visualization tool for multi-channel EEG (Electroencephalography) and ECG (Electrocardiography) signal analysis. Built with Python, Plotly, and modern software engineering practices to provide researchers and clinicians with powerful, reliable signal exploration capabilities.
+**Visualize brain waves and heart signals in your browser - no complicated setup required.**
 
-**Version 2.0** features a complete architectural redesign with modular components, comprehensive testing, and production-ready scalability.
+Quasar EEG Viewer turns raw EEG (brain activity) and ECG (heart rate) data into interactive web visualizations. If you work with neural signals, sleep studies, brain-computer interfaces, or cardiac monitoring, this tool makes exploring your data easier.
 
 ## Features
 
@@ -260,14 +259,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- Built with the excellent [Plotly](https://plotly.com/python/) library for interactive visualizations
-- Data processing powered by [Pandas](https://pandas.pydata.org/) and [NumPy](https://numpy.org/)
-- Follows standard EEG electrode placement conventions (International 10-20 system)
+- Uses [Plotly](https://plotly.com/python/) for interactive visualizations
+- Data processing with [Pandas](https://pandas.pydata.org/) and [NumPy](https://numpy.org/)
+- Follows the International 10-20 system for EEG electrode placement
 
-## Contact
+## Questions?
 
-For questions, suggestions, or collaboration opportunities, please open an issue on GitHub.
+Open an issue on GitHub if you need help or have suggestions.
 
 ---
 
-**Technical Stack**: Python 3.8+ | Plotly | Pandas | NumPy | HTML5
+**Stack**: Python 3.8+ | Plotly | Pandas | NumPy
