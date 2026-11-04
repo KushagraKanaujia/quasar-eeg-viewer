@@ -131,3 +131,25 @@ class TestEEGPlotter:
 
         assert output_file.exists()
         assert output_file.stat().st_size > 0
+
+
+def test_include_plotlyjs_cdn_makes_small_files(sample_eeg_data, tmp_path):
+    """include_plotlyjs='cdn' links plotly.js instead of embedding it"""
+    from quasar_eeg.core.config import ApplicationConfig
+
+    channels = ChannelClassifier().classify(sample_eeg_data)
+
+    embedded = tmp_path / "embedded.html"
+    EEGPlotter().create_plot(sample_eeg_data, channels, embedded)
+
+    config = ApplicationConfig()
+    config.visualization_config.include_plotlyjs = "cdn"
+    linked = tmp_path / "linked.html"
+    plotter = EEGPlotter(config)
+    plotter.create_plot(sample_eeg_data, channels, linked)
+    stacked = tmp_path / "stacked.html"
+    plotter.create_subplot_by_channel(sample_eeg_data, channels, stacked)
+
+    assert "cdn.plot.ly" in linked.read_text()
+    assert "cdn.plot.ly" in stacked.read_text()
+    assert linked.stat().st_size < embedded.stat().st_size / 2

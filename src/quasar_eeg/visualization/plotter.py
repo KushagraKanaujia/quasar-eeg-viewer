@@ -297,7 +297,7 @@ class EEGPlotter:
 
         fig.write_html(
             str(output_path),
-            include_plotlyjs=True,
+            include_plotlyjs=self.viz_config.include_plotlyjs,
             config=config
         )
 
@@ -354,7 +354,11 @@ class EEGPlotter:
             title_text="EEG/ECG Channels (Subplot View)"
         )
 
-        fig.write_html(str(output_file))
+        fig.write_html(
+            str(output_file),
+            include_plotlyjs=self.viz_config.include_plotlyjs,
+            config={'displaylogo': False}
+        )
         self.logger.info(f"Subplot view saved to: {output_file}")
 
         return fig

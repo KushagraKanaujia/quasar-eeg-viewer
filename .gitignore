@@ -69,3 +69,8 @@ eeg_export_*.csv
 .mypy_cache/
 .dmypy.json
 dmypy.json
+# Static demo site: keep the page sources, ignore build output
+!site/*.html
+site/demo/
+site/sample.csv
+htmlcov/
