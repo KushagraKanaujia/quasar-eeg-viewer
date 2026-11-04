@@ -67,6 +67,10 @@ class VisualizationConfig:
     # Unit conversion factors
     uv_to_mv_factor: float = 1000.0
 
+    # How plotly.js is included in exported HTML: True embeds it (works
+    # offline, ~4.5 MB), 'cdn' loads it from cdn.plot.ly (much smaller files)
+    include_plotlyjs: object = True
+
 
 @dataclass
 class ApplicationConfig:

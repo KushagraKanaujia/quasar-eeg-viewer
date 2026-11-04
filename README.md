@@ -1,272 +1,138 @@
 # Quasar EEG Viewer
 
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+**Turn a raw EEG/ECG recording (CSV) into an interactive plot you can pan, zoom and explore in the browser.**
 
-**Visualize brain waves and heart signals in your browser - no complicated setup required.**
+[![Live demo](https://img.shields.io/badge/live%20demo-netlify-00C7B7?logo=netlify&logoColor=white)](https://kush-quasar-eeg-viewer.netlify.app)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/KushagraKanaujia/quasar-eeg-viewer?quickstart=1)
+[![CI](https://github.com/KushagraKanaujia/quasar-eeg-viewer/actions/workflows/ci.yml/badge.svg)](https://github.com/KushagraKanaujia/quasar-eeg-viewer/actions/workflows/ci.yml)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Quasar EEG Viewer turns raw EEG (brain activity) and ECG (heart rate) data into interactive web visualizations. If you work with neural signals, sleep studies, brain-computer interfaces, or cardiac monitoring, this tool makes exploring your data easier.
+## Try it in one click
 
-## Features
+| | What you get |
+|---|---|
+| **[Live demo](https://kush-quasar-eeg-viewer.netlify.app)** | The included 24-channel sample recording, already plotted. You can also open your own CSV; it is read in your browser and never uploaded. The page also links to the HTML files the Python CLI produced from the same sample ([overlay](https://kush-quasar-eeg-viewer.netlify.app/demo/overlay.html), [stacked](https://kush-quasar-eeg-viewer.netlify.app/demo/stacked.html)). |
+| **[Open in Codespaces](https://codespaces.new/KushagraKanaujia/quasar-eeg-viewer?quickstart=1)** | A ready Python 3.12 environment. It installs the package, runs the CLI on the sample data and opens the demo page on port 8000. After that you can run `quasar-eeg-viewer` and `pytest` in the terminal. |
 
-### Interactive Visualization
-- **Pan & Zoom**: Smooth navigation through time-series data with mouse-based controls
-- **Range Slider**: Quick temporal navigation with built-in scrollbar
-- **Channel Toggling**: Click legend items to show/hide individual channels
-- **Export Capabilities**: High-resolution PNG export via integrated toolbar
-- **Unified Hover**: Crosshair display showing synchronized values across all channels
+## What it does
 
-### Intelligent Signal Scaling
-- **Dual Y-Axis System**: Separate scaling for EEG (µV) and ECG (mV) signals
-- **Automatic Channel Classification**: Smart detection of signal types based on naming conventions
-- **Reference Channel Support**: Dedicated handling of common-mode reference signals
-- **Visual Differentiation**: Distinct line styles (solid/dashed/dotted) for different signal types
+EEG headsets record many channels at once. Brain channels (EEG) are tens of microvolts, while eye and heart channels (EOG/ECG) and the common-mode reference are often thousands of times larger. If you put them all on one axis, the brain signals look flat.
 
-### Data Processing
-- **Flexible Input**: Supports CSV format with automatic comment line filtering
-- **High Performance**: Efficient handling of large datasets with optimized rendering
-- **Standard Compliance**: Compatible with common EEG/ECG data formats
-- **Robust Parsing**: Handles various CSV structures and naming conventions
+Quasar EEG Viewer reads a CSV export, works out what kind of signal each column is from its name, and writes a single self-contained HTML file with:
 
-## Installation
+- **Two y-axes**: EEG in µV on the left; ECG/EOG and reference converted to mV on the right
+- **Pan, zoom and a range slider**, starting with a 30-second window
+- **Legend toggles**, grouped by EEG / ECG-EOG / reference
+- **Unified hover** that shows every channel's value at one time point
+- **PNG export** and drawing tools in the toolbar
+- **A stacked view** (`--subplot`) with one row per channel
 
-### Prerequisites
-- Python 3.8 or higher
-- pip package manager
+The bundled sample (`EEG and ECG data_02_raw.csv`) is a 42.5 s, 300 Hz export from a DSI-24 headset with 21 EEG channels, 2 EOG channels and the CM reference.
 
-### Quick Install
+## How it works
 
-Install from the repository:
+```
+CSV ──► EEGDataLoader ──► ChannelClassifier ──► EEGPlotter ──► interactive .html
+        skip "#" lines     EEG / ECG / ref /     Plotly figure,
+        need a Time col    ignored / unknown     dual y-axis
+```
+
+1. **Load** (`core/data_loader.py`): drops comment lines starting with `#` (device header lines), parses the rest with pandas and checks that there is a `Time` column.
+2. **Classify** (`core/channel_classifier.py`): matches column names to lists in `core/config.py`. 10-20 electrode names (`Fz`, `Cz`, `P3`, …) are EEG, `X1:LEOG`/`X2:REOG` are ECG/EOG, `CM` is the reference, and device columns (`Trigger`, `ADC_Status`, …) are ignored.
+3. **Plot** (`visualization/plotter.py`): builds the Plotly figure and writes HTML. plotly.js is embedded by default so the file works offline. Set `visualization_config.include_plotlyjs = "cdn"` to get much smaller files.
+
+The live demo page (`site/index.html`) repeats the same three steps in JavaScript (Papa Parse + Plotly.js), so you can try it without installing Python. One difference: columns it does not recognise are still plotted, but they stay hidden until you click them in the legend.
+
+## Tech stack
+
+| | |
+|---|---|
+| Core | Python 3.8+, [pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/), [Plotly](https://plotly.com/python/) |
+| CLI | `argparse` entry point `quasar-eeg-viewer` |
+| Tests | pytest + pytest-cov (`tests/`), run by GitHub Actions on Python 3.10 and 3.12 |
+| Demo site | Static HTML with [Pico CSS](https://picocss.com/), [Papa Parse](https://www.papaparse.com/), [Plotly.js](https://plotly.com/javascript/), hosted on Netlify |
+| Dev environment | Dev container based on the [devcontainers/templates](https://github.com/devcontainers/templates) Python image |
+
+## Run locally
 
 ```bash
 git clone https://github.com/KushagraKanaujia/quasar-eeg-viewer.git
 cd quasar-eeg-viewer
-pip install -e .
-```
-
-For development (with testing and linting tools):
-
-```bash
+python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
+
+quasar-eeg-viewer                       # plots the bundled sample -> eeg_ecg_plot.html
+quasar-eeg-viewer --data my.csv -o my.html
+quasar-eeg-viewer --data my.csv --subplot
+quasar-eeg-viewer --data my.csv --info  # file size and column names only
+pytest                                  # run the tests
 ```
 
-### Using pip (once published to PyPI)
+Open the HTML file in any browser.
+
+**Build the demo site** (the same files that are on Netlify):
 
 ```bash
-pip install quasar-eeg-viewer
-```
-
-## Usage
-
-### Command-Line Interface
-
-After installation, use the `quasar-eeg-viewer` command:
-
-```bash
-# Basic usage with default data file
-quasar-eeg-viewer
-
-# Specify custom data file
-quasar-eeg-viewer --data path/to/your/data.csv --output analysis.html
-
-# View file information without plotting
-quasar-eeg-viewer --data data.csv --info
-
-# Create subplot view
-quasar-eeg-viewer --data data.csv --subplot
-
-# Adjust logging level
-quasar-eeg-viewer --data data.csv --log-level DEBUG
+python scripts/build_demo.py
+python -m http.server 8000 --directory site   # http://localhost:8000
 ```
 
 ### Python API
 
-Use the package programmatically in your Python code:
-
 ```python
 from quasar_eeg import quick_plot
-
-# Quick plotting
-fig = quick_plot('data.csv', 'output.html')
+fig = quick_plot("data.csv", "output.html")
 ```
-
-For more control:
 
 ```python
 from quasar_eeg import EEGDataLoader, ChannelClassifier, EEGPlotter
 
-# Load data
-loader = EEGDataLoader()
-df = loader.load_from_file('data.csv')
-
-# Classify channels
-classifier = ChannelClassifier()
-channels = classifier.classify(df)
-
-# Create visualization
-plotter = EEGPlotter()
-fig = plotter.create_plot(df, channels, 'output.html')
+df = EEGDataLoader().load_from_file("data.csv")
+channels = ChannelClassifier().classify(df)   # {'eeg': [...], 'ecg': [...], 'reference': [...], ...}
+fig = EEGPlotter().create_plot(df, channels, "output.html")
 ```
 
-### Legacy Script (Backward Compatibility)
+To add a channel name the classifier does not know, use `ChannelClassifier().add_custom_channel("EKG", "ecg")`. More detail is in [docs/USAGE.md](docs/USAGE.md) and [docs/API.md](docs/API.md).
 
-The original script is still available for backward compatibility:
+### Input format
 
-```bash
-python eeg_ecg_plotter.py --data data.csv --output output.html
-```
+- One header row that includes `Time` (seconds), followed by one row per sample
+- Any number of `#` comment lines before the header (DSI-Streamer exports work as they are)
+- Signal values in µV
 
-## Data Format
-
-The tool expects CSV files with:
-- **Time column**: Timestamps in seconds
-- **Signal columns**: Named channels (e.g., Fz, Cz, P3, X1:LEOG, etc.)
-- **Comment support**: Lines starting with `#` are automatically skipped
-- **Standard 10-20 system**: EEG electrode naming convention
-
-Example structure:
 ```csv
-Time,Fz,Cz,P3,C3,F3,F4,C4,P4,X1:LEOG,X2:REOG,CM
-0.0,12.5,8.3,15.2,9.1,11.4,10.8,7.6,13.2,250.3,245.1,1200.5
-0.0033,13.1,8.7,15.8,9.5,11.9,11.2,8.0,13.7,251.2,246.0,1205.3
+# Sample_Frequency_(Hz) =,300
+Time,Fz,Cz,P3,X1:LEOG,X2:REOG,CM
+0.0,12.5,8.3,15.2,250.3,245.1,1200.5
+0.0033,13.1,8.7,15.8,251.2,246.0,1205.3
 ```
 
-## Technical Architecture
-
-### Core Technologies
-| Library | Purpose | Version |
-|---------|---------|---------|
-| **Plotly** | Interactive visualization and WebGL rendering | 5.15.0+ |
-| **Pandas** | Efficient data manipulation and CSV parsing | 1.5.0+ |
-| **NumPy** | Numerical computations and array operations | 1.21.0+ |
-
-### Architecture Highlights
-- **Modular package structure**: Clean separation of concerns across modules
-- **Standalone HTML output**: No server required for visualization
-- **Comprehensive error handling**: Robust DataLoadError and PlotterError exceptions
-- **Configurable logging**: Built-in logging system for debugging and monitoring
-- **Memory efficient**: Streaming data processing for large files
-- **Fully tested**: Comprehensive unit test coverage with pytest
-- **Type-safe configuration**: Dataclass-based configuration management
-- **CI/CD pipeline**: Automated testing across multiple Python versions and platforms
-
-### Channel Classification Logic
-The tool automatically categorizes channels into three groups:
-
-1. **EEG Channels** (Primary Y-axis, µV scale)
-   - Standard 10-20 system positions: Fz, Cz, P3, C3, F3, F4, C4, P4, Fp1, Fp2, T3, T4, T5, T6, O1, O2, F7, F8, A1, A2, Pz
-   - Displayed with solid lines in color-coded palette
-
-2. **ECG/EOG Channels** (Secondary Y-axis, mV scale)
-   - Eye movement and cardiac channels: X1:LEOG, X2:REOG
-   - Converted from µV to mV (÷1000) for appropriate scaling
-   - Displayed with dashed lines for visual distinction
-
-3. **Reference Channels** (Secondary Y-axis, mV scale)
-   - Common-mode reference: CM
-   - Displayed with dotted gray line at reduced opacity
-
-## Use Cases
-
-### Clinical Applications
-- **Sleep study analysis**: Review polysomnography recordings
-- **Seizure detection**: Identify abnormal EEG patterns
-- **Cardiac monitoring**: Analyze ECG waveforms alongside brain activity
-
-### Research Applications
-- **Signal quality assessment**: Validate recording integrity
-- **Artifact identification**: Detect movement and electrical interference
-- **Multi-modal analysis**: Compare brain and cardiac activity patterns
-
-### Educational Applications
-- **Signal processing instruction**: Demonstrate filtering and scaling concepts
-- **Data visualization training**: Teach interactive plotting techniques
-- **Neuroscience education**: Explore real physiological signals
-
-## Project Structure
+## Project layout
 
 ```
-quasar-eeg-viewer/
-├── src/quasar_eeg/              # Main package source
-│   ├── __init__.py              # Package initialization and exports
-│   ├── cli.py                   # Command-line interface
-│   ├── core/                    # Core functionality
-│   │   ├── __init__.py
-│   │   ├── config.py            # Configuration management
-│   │   ├── data_loader.py       # Data loading and validation
-│   │   └── channel_classifier.py # Channel classification logic
-│   ├── visualization/           # Plotting components
-│   │   ├── __init__.py
-│   │   └── plotter.py           # Interactive plot generation
-│   └── utils/                   # Utility modules
-│       ├── __init__.py
-│       └── logger.py            # Logging utilities
-├── tests/                       # Comprehensive test suite
-│   ├── __init__.py
-│   ├── conftest.py              # Pytest configuration & fixtures
-│   ├── test_data_loader.py
-│   ├── test_channel_classifier.py
-│   └── test_plotter.py
-├── docs/                        # Documentation
-├── examples/                    # Usage examples
-├── .github/workflows/           # CI/CD pipelines
-│   └── ci.yml                   # GitHub Actions workflow
-├── eeg_ecg_plotter.py          # Legacy script (backward compatibility)
-├── pyproject.toml              # Modern Python packaging
-├── setup.py                    # Setup configuration
-├── requirements.txt            # Dependencies
-├── CHANGELOG.md                # Version history
-├── CONTRIBUTING.md             # Contribution guidelines
-├── LICENSE                     # MIT License
-└── README.md                   # This file
+src/quasar_eeg/      package: cli.py, core/ (config, loader, classifier), visualization/, utils/
+tests/               pytest suite
+scripts/build_demo.py  builds site/demo/*.html and site/sample.csv with the real package
+site/index.html      static demo page (in-browser viewer)
+.devcontainer/       Codespaces / Dev Containers setup
+eeg_ecg_plotter.py   original single-file script, kept for backward compatibility
 ```
 
-## Future Enhancements
+## Ideas for later
 
-### Signal Processing
-- Digital filtering (high-pass, low-pass, notch filters)
-- Spectral analysis and power spectral density plots
-- Independent component analysis (ICA) for artifact removal
-- Time-frequency analysis (wavelet transforms, spectrograms)
+Filtering (high-pass, low-pass, notch), spectral plots, annotations and EDF/BIDS import are not implemented yet. Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### User Interface
-- Real-time streaming data support
-- Multi-file comparison mode
-- Annotation and event marking tools
-- Configurable color schemes and themes
+## Credits
 
-### Advanced Features
-- Automated artifact detection algorithms
-- Statistical analysis and reporting
-- Integration with neuroimaging data (fMRI, MEG)
-- Export to analysis formats (EDF, BIDS)
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
-
-### Development Setup
-```bash
-git clone https://github.com/KushagraKanaujia/quasar-eeg-viewer.git
-cd quasar-eeg-viewer
-pip install -r requirements.txt
-```
+- [Plotly](https://github.com/plotly/plotly.py) and [Plotly.js](https://github.com/plotly/plotly.js) (MIT): interactive charts
+- [pandas](https://github.com/pandas-dev/pandas) (BSD-3-Clause) and [NumPy](https://github.com/numpy/numpy) (BSD-3-Clause): data handling
+- [Papa Parse](https://github.com/mholt/PapaParse) (MIT): CSV parsing in the browser demo
+- [Pico CSS](https://github.com/picocss/pico) (MIT): demo page styling
+- [devcontainers/templates](https://github.com/devcontainers/templates) (MIT): base for the Codespaces config
+- [shields.io](https://shields.io) badges
+- Electrode names follow the international 10-20 system
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Uses [Plotly](https://plotly.com/python/) for interactive visualizations
-- Data processing with [Pandas](https://pandas.pydata.org/) and [NumPy](https://numpy.org/)
-- Follows the International 10-20 system for EEG electrode placement
-
-## Questions?
-
-Open an issue on GitHub if you need help or have suggestions.
-
----
-
-**Stack**: Python 3.8+ | Plotly | Pandas | NumPy
+MIT, see [LICENSE](LICENSE).
